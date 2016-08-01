@@ -1,0 +1,7 @@
+[package]
+name = "glass"
+version = "0.1.0"
+authors = ["Arpith Siromoney <arpith@feedreader.co>"]
+
+[dependencies]
+hyper = "0.9"
