@@ -5,3 +5,6 @@ authors = ["Arpith Siromoney <arpith@feedreader.co>"]
 
 [dependencies]
 hyper = "0.9"
+html5ever = "0.5.3"
+string_cache = "0.2.18"
+tendril = "0.2.2"
