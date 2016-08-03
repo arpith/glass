@@ -4,16 +4,37 @@ extern crate html5ever;
 #[macro_use]
 extern crate string_cache;
 extern crate tendril;
+#[macro_use]
+extern crate lazy_static;
 
 use std::env;
 use std::io::{self, Read};
+use std::str::FromStr;
 use std::iter::repeat;
 use std::default::Default;
 use std::string::String;
 
-use tendril::TendrilSink;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::sync::mpsc;
+
+use tendril::*;
+use tendril::fmt::{UTF8};
+
 use html5ever::parse_document;
 use html5ever::rcdom::{Document, Doctype, Text, Comment, Element, RcDom, Handle};
+use html5ever::tokenizer::{TokenSink, Token, TokenizerOpts, ParseError};
+use html5ever::tokenizer::{TagToken, StartTag, Tag};
+
+   /* {
+lazy_static! {
+    static ref CSSlinks: Vec<String> = Vec::new();
+        let mut init = Vec::new();
+        init
+    };
+}
+    */
+static mut CSSlinks: Vec<String> = vec!();
 
 pub fn escape_default(s: &str) -> String {
     s.chars().flat_map(|c| c.escape_default()).collect()
@@ -35,15 +56,23 @@ fn walk(indent: usize, handle: Handle) {
 
         Comment(ref text)
             => println!("<!-- {:?} -->", escape_default(text)),
-
         Element(ref name, _, ref attrs) => {
             assert!(name.ns == ns!(html));
+            let mut isCSS = false;
             print!("<{}", name.local);
             for attr in attrs.iter() {
                 assert!(attr.name.ns == ns!());
+                if name.local == string_cache::Atom::from("link") && attr.name.local == string_cache::Atom::from("type") && attr.value == Tendril::from("text/css") {
+                   isCSS = true;
+                }
+                if isCSS && attr.name.local == string_cache::Atom::from("href") {
+                    unsafe {
+                       CSSlinks.push(String::from(attr.value.clone()));
+                    }
+                }
                 print!(" {}=\"{}\"", attr.name.local, attr.value);
+                println!(">");
             }
-            println!(">");
         }
     }
 
