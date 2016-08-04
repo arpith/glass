@@ -1,28 +1,19 @@
 extern crate hyper;
 extern crate html5ever;
 extern crate tendril;
+extern crate cssparser;
 
 #[macro_use]
 extern crate string_cache;
 
 use std::env;
-use std::io::{self, Read};
-use std::str::FromStr;
-use std::iter::repeat;
 use std::default::Default;
 use std::string::String;
 
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::sync::mpsc;
-
 use tendril::*;
-use tendril::fmt::{UTF8};
 
 use html5ever::parse_document;
-use html5ever::rcdom::{Document, Doctype, Text, Comment, Element, RcDom, Handle};
-use html5ever::tokenizer::{TokenSink, Token, TokenizerOpts, ParseError};
-use html5ever::tokenizer::{TagToken, StartTag, Tag};
+use html5ever::rcdom::{Element, RcDom, Handle};
 
 pub fn escape_default(s: &str) -> String {
     s.chars().flat_map(|c| c.escape_default()).collect()
