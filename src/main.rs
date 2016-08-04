@@ -1,9 +1,9 @@
 extern crate hyper;
 extern crate html5ever;
+extern crate tendril;
 
 #[macro_use]
 extern crate string_cache;
-extern crate tendril;
 
 use std::env;
 use std::io::{self, Read};
@@ -28,8 +28,8 @@ pub fn escape_default(s: &str) -> String {
     s.chars().flat_map(|c| c.escape_default()).collect()
 }
 
-fn getCSSlinks(handle: Handle) -> Vec<String> {
-    let mut CSSlinks: Vec<String> = Vec::new();
+fn get_css_links(handle: Handle) -> Vec<String> {
+    let mut csslinks: Vec<String> = Vec::new();
     let mut queue: Vec<Handle> = Vec::new();
     queue.push(handle);
     while queue.len() != 0 {
@@ -38,16 +38,16 @@ fn getCSSlinks(handle: Handle) -> Vec<String> {
         match node.node {
             Element(ref name, _, ref attrs) => {
                 assert!(name.ns == ns!(html));
-                let mut isCSS = false;
+                let mut is_css = false;
                 for attr in attrs.iter() {
                     assert!(attr.name.ns == ns!());
                     if name.local == string_cache::Atom::from("link") && 
                         attr.name.local == string_cache::Atom::from("type") && 
                         attr.value == Tendril::from("text/css") {
-                        isCSS = true;
+                        is_css = true;
                     }
-                    if isCSS && attr.name.local == string_cache::Atom::from("href") {
-                        CSSlinks.push(String::from(attr.value.clone()));
+                    if is_css && attr.name.local == string_cache::Atom::from("href") {
+                        csslinks.push(String::from(attr.value.clone()));
                     }
                 }
             }
@@ -59,7 +59,7 @@ fn getCSSlinks(handle: Handle) -> Vec<String> {
             queue.push(child.clone());
         }
     }
-    return CSSlinks;
+    return csslinks;
 }
  
 fn main() {
@@ -71,7 +71,11 @@ fn main() {
         println!("Status: {}", res.status);
         let dom = parse_document(RcDom::default(), Default::default()).from_utf8().read_from(&mut res).unwrap();
         println!("Parsed dom!");
-        let CSSlinks = getCSSlinks(dom.document);
-        println!("CSS links: {:?}", CSSlinks);
+        let csslinks = get_css_links(dom.document);
+        println!("CSS links: {:?}", csslinks);
+        for link in csslinks.iter() {
+            let mut res = client.get(link).send().unwrap();
+            println!("Status for {}: {}", link, res.status);
+        }
     }
 }
