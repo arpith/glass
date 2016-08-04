@@ -4,8 +4,6 @@ extern crate html5ever;
 #[macro_use]
 extern crate string_cache;
 extern crate tendril;
-#[macro_use]
-extern crate lazy_static;
 
 use std::env;
 use std::io::{self, Read};
@@ -26,61 +24,44 @@ use html5ever::rcdom::{Document, Doctype, Text, Comment, Element, RcDom, Handle}
 use html5ever::tokenizer::{TokenSink, Token, TokenizerOpts, ParseError};
 use html5ever::tokenizer::{TagToken, StartTag, Tag};
 
-   /* {
-lazy_static! {
-    static ref CSSlinks: Vec<String> = Vec::new();
-        let mut init = Vec::new();
-        init
-    };
-}
-    */
-static mut CSSlinks: Vec<String> = vec!();
-
 pub fn escape_default(s: &str) -> String {
     s.chars().flat_map(|c| c.escape_default()).collect()
 }
 
-fn walk(indent: usize, handle: Handle) {
-    let node = handle.borrow();
-    // FIXME: don't allocate
-    print!("{}", repeat(" ").take(indent).collect::<String>());
-    match node.node {
-        Document
-            => println!("#Document"),
-
-        Doctype(ref name, ref public, ref system)
-            => println!("<!DOCTYPE {} \"{}\" \"{}\">", *name, *public, *system),
-
-        Text(ref text)
-            => println!("#text: {:?}", escape_default(text)),
-
-        Comment(ref text)
-            => println!("<!-- {:?} -->", escape_default(text)),
-        Element(ref name, _, ref attrs) => {
-            assert!(name.ns == ns!(html));
-            let mut isCSS = false;
-            print!("<{}", name.local);
-            for attr in attrs.iter() {
-                assert!(attr.name.ns == ns!());
-                if name.local == string_cache::Atom::from("link") && attr.name.local == string_cache::Atom::from("type") && attr.value == Tendril::from("text/css") {
-                   isCSS = true;
-                }
-                if isCSS && attr.name.local == string_cache::Atom::from("href") {
-                    unsafe {
-                       CSSlinks.push(String::from(attr.value.clone()));
+fn getCSSlinks(handle: Handle) -> Vec<String> {
+    let mut CSSlinks: Vec<String> = Vec::new();
+    let mut queue: Vec<Handle> = Vec::new();
+    queue.push(handle);
+    while queue.len() != 0 {
+        let handle = queue.remove(0);
+        let node = handle.borrow();
+        match node.node {
+            Element(ref name, _, ref attrs) => {
+                assert!(name.ns == ns!(html));
+                let mut isCSS = false;
+                for attr in attrs.iter() {
+                    assert!(attr.name.ns == ns!());
+                    if name.local == string_cache::Atom::from("link") && 
+                        attr.name.local == string_cache::Atom::from("type") && 
+                        attr.value == Tendril::from("text/css") {
+                        isCSS = true;
+                    }
+                    if isCSS && attr.name.local == string_cache::Atom::from("href") {
+                        CSSlinks.push(String::from(attr.value.clone()));
                     }
                 }
-                print!(" {}=\"{}\"", attr.name.local, attr.value);
-                println!(">");
+            }
+            _ => {
+                //don't do anything
             }
         }
+        for child in node.children.iter() {
+            queue.push(child.clone());
+        }
     }
-
-    for child in node.children.iter() {
-        walk(indent+4, child.clone());
-    }
+    return CSSlinks;
 }
-
+ 
 fn main() {
     println!("Going to make get request");
     let client = hyper::Client::new();
@@ -90,6 +71,7 @@ fn main() {
         println!("Status: {}", res.status);
         let dom = parse_document(RcDom::default(), Default::default()).from_utf8().read_from(&mut res).unwrap();
         println!("Parsed dom!");
-        walk(0, dom.document);
+        let CSSlinks = getCSSlinks(dom.document);
+        println!("CSS links: {:?}", CSSlinks);
     }
 }
