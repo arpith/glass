@@ -2,6 +2,7 @@ extern crate hyper;
 extern crate html5ever;
 extern crate tendril;
 extern crate cssparser;
+extern crate piston_window;
 
 #[macro_use]
 extern crate string_cache;
@@ -14,6 +15,8 @@ use tendril::*;
 
 use html5ever::parse_document;
 use html5ever::rcdom::{Element, RcDom, Handle};
+
+mod layout;
 
 pub fn escape_default(s: &str) -> String {
     s.chars().flat_map(|c| c.escape_default()).collect()
@@ -68,5 +71,6 @@ fn main() {
             let mut res = client.get(link).send().unwrap();
             println!("Status for {}: {}", link, res.status);
         }
+        layout::render(hostname);
     }
 }
