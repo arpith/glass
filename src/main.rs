@@ -68,7 +68,7 @@ fn main() {
         let csslinks = get_css_links(dom.document);
         println!("CSS links: {:?}", csslinks);
         for link in csslinks.iter() {
-            let mut res = client.get(link).send().unwrap();
+            let res = client.get(link).send().unwrap();
             println!("Status for {}: {}", link, res.status);
         }
         layout::render(hostname);
