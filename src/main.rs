@@ -65,12 +65,14 @@ fn main() {
         println!("Status: {}", res.status);
         let dom = parse_document(RcDom::default(), Default::default()).from_utf8().read_from(&mut res).unwrap();
         println!("Parsed dom!");
+        /*
         let csslinks = get_css_links(dom.document);
         println!("CSS links: {:?}", csslinks);
         for link in csslinks.iter() {
             let res = client.get(link).send().unwrap();
             println!("Status for {}: {}", link, res.status);
         }
-        layout::render(hostname);
+        */
+        layout::render(hostname, dom.document);
     }
 }

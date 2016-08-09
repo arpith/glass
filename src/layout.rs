@@ -2,8 +2,15 @@ extern crate piston_window;
 extern crate find_folder;
 
 use piston_window::*;
+use std::string::String;
 
-pub fn render(hostname: String) {
+use html5ever::rcdom::{Text as htmlText, Handle};
+
+pub fn escape_default(s: &str) -> String {
+    s.chars().flat_map(|c| c.escape_default()).collect()
+}
+
+pub fn render(hostname: String, handle: Handle) {
     let hostname_str = &hostname[..];
     let mut window: PistonWindow = WindowSettings::new(
             hostname_str,
@@ -11,7 +18,6 @@ pub fn render(hostname: String) {
         )
         .fullscreen(true)
         .exit_on_esc(true)
-        //.opengl(OpenGL::V2_1) // Set a different OpenGl version
         .build()
         .unwrap();
 
@@ -22,16 +28,37 @@ pub fn render(hostname: String) {
     let mut glyphs = Glyphs::new(font, factory).unwrap();
 
     while let Some(e) = window.next() {
+        let handle = handle.clone();
         window.draw_2d(&e, |c, g| {
-            let transform = c.transform.trans(10.0, 100.0);
-
             clear([1.0, 1.0, 1.0, 1.0], g);
-            text::Text::new_color([0.0, 0.0, 0.0, 1.0], 32).draw(
-                hostname_str,
-                &mut glyphs,
-                &c.draw_state,
-                transform, g
-            );
+            let mut queue: Vec<Handle> = Vec::new();
+            let mut height = 0.0;
+            queue.push(handle);
+            while queue.len() != 0 {
+                let handle = queue.remove(0);
+                let node = handle.borrow();
+                match node.node {
+                    htmlText(ref text_ref) => {
+                        height = height + 50.0;
+                        let text_string = String::from(escape_default(text_ref));
+                        let text_str = &text_string[..];
+                        let transform = c.transform.trans(10.0, height);
+                        text::Text::new_color([0.0, 0.0, 0.0, 1.0], 32).draw(
+                            text_str,
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g
+                        );
+                    }
+                    _ => {
+                        //don't do anything
+                    }
+                }
+                for child in node.children.iter() {
+                    queue.push(child.clone());
+                }
+            }
         });
     }
 }
