@@ -6,10 +6,6 @@ use std::string::String;
 
 use html5ever::rcdom::{Text as htmlText, Handle};
 
-pub fn escape_default(s: &str) -> String {
-    s.chars().flat_map(|c| c.escape_default()).collect()
-}
-
 pub fn render(hostname: String, handle: Handle) {
     let hostname_str = &hostname[..];
     let mut window: PistonWindow = WindowSettings::new(
@@ -39,17 +35,19 @@ pub fn render(hostname: String, handle: Handle) {
                 let node = handle.borrow();
                 match node.node {
                     htmlText(ref text_ref) => {
-                        height = height + 50.0;
-                        let text_string = String::from(escape_default(text_ref));
-                        let text_str = &text_string[..];
-                        let transform = c.transform.trans(10.0, height);
-                        text::Text::new_color([0.0, 0.0, 0.0, 1.0], 32).draw(
-                            text_str,
-                            &mut glyphs,
-                            &c.draw_state,
-                            transform,
-                            g
-                        );
+                        let text_string = String::from(text_ref);
+                        let text_str = &text_string.trim()[..];
+                        if text_str != "" {
+                            height = height + 50.0;
+                            let transform = c.transform.trans(10.0, height);
+                            text::Text::new_color([0.0, 0.0, 0.0, 1.0], 32).draw(
+                                text_str,
+                                &mut glyphs,
+                                &c.draw_state,
+                                transform,
+                                g
+                            );
+                        }
                     }
                     _ => {
                         //don't do anything
