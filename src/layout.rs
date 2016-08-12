@@ -6,10 +6,10 @@ use std::string::String;
 
 use html5ever::rcdom::{Text as htmlText, Handle};
 
-pub fn render(hostname: String, handle: Handle) {
-    let hostname_str = &hostname[..];
+pub fn render(title: String, handle: Handle) {
+    let title_str = &title[..];
     let mut window: PistonWindow = WindowSettings::new(
-            hostname_str,
+            title_str,
             [200, 200]
         )
         .fullscreen(true)
