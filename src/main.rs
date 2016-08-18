@@ -7,6 +7,8 @@ extern crate piston_window;
 #[macro_use]
 extern crate string_cache;
 
+#[macro_use] extern crate conrod;
+
 use std::env;
 use std::default::Default;
 use std::string::String;
