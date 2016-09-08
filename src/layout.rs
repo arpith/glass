@@ -61,6 +61,7 @@ fn get_text(handle: Handle) -> Vec<String> {
         match node.node {
             htmlText(ref text_ref) => {
                 let text_string = String::from(text_ref);
+                println!("{:}", text_string);
                 let text_str = &text_string.trim()[..];
                 if text_str != "" {
                     text_strings.push(String::from(text_str));
@@ -77,11 +78,29 @@ fn get_text(handle: Handle) -> Vec<String> {
     return text_strings;
 }
 
-fn set_ui(ref mut ui: conrod::UiCell, list: Vec<String>) {
+fn set_ui(ref mut ui: conrod::UiCell, mut list: Vec<String>) {
     use conrod::{widget, Colorable, Positionable, Sizeable, Widget};
     widget_ids!{CANVAS, LIST};
-    widget::Canvas::new().color(conrod::color::WHITE).set(CANVAS, ui);
+    widget::Canvas::new()
+        .color(conrod::color::WHITE)
+        .scroll_kids()
+        .set(CANVAS, ui);
 
+    let mut widget_id: conrod::widget::Id = widget::Id::from(0);
+    let mut margin_top: conrod::Scalar = 50.0;
+    while list.len() != 0 {
+        widget_id = widget_id + 1;
+        margin_top = margin_top + 50.0;
+        let text_string = list.remove(0);
+        let text_str = &text_string[..];
+        let text_widget = widget::Text::new(text_str)
+            .color(conrod::color::DARK_CHARCOAL)
+            .parent(CANVAS)
+            .top_left_with_margins_on(CANVAS, margin_top, 20.0)
+            .set(widget_id, ui);
+    }
+
+/*
     const ITEM_HEIGHT: conrod::Scalar = 50.0;
     let num_items = list.len();
     let (mut items, scrollbar) = widget::List::new(num_items, ITEM_HEIGHT)
@@ -101,4 +120,5 @@ fn set_ui(ref mut ui: conrod::UiCell, list: Vec<String>) {
     if let Some(scrollbar) = scrollbar {
         scrollbar.set(ui);
     }
+    */
 }
